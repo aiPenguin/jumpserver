@@ -1,0 +1,28 @@
+#!/bin/bash
+# 用法: set-expiry <用户名> <天数>
+
+if [ $# -ne 2 ]; then
+    echo "用法: set-expiry <用户名> <天数>"
+    echo "      设置用户账户的过期时间，从今天起计算"
+    echo "      <天数> 为 -1 表示永不过期"
+    exit 1
+fi
+
+USERNAME=$1
+DAYS=$2
+
+# 检查用户是否存在
+if ! id "$USERNAME" &>/dev/null; then
+    echo "错误: 用户 $USERNAME 不存在"
+    exit 1
+fi
+
+# 设置过期时间
+if [ "$DAYS" -eq -1 ]; then
+    sudo chage -E -1 $USERNAME
+    echo "用户 $USERNAME 已设置为永不过期"
+else
+    EXPIRE_DATE=$(date -d "+$DAYS days" +%Y-%m-%d)
+    sudo chage -E $EXPIRE_DATE $USERNAME
+    echo "用户 $USERNAME 的账户将于 $EXPIRE_DATE 过期"
+fi

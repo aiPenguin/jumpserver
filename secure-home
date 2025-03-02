@@ -1,0 +1,32 @@
+#!/bin/bash
+# 用法: secure-home <用户名>
+
+if [ $# -ne 1 ]; then
+    echo "用法: secure-home <用户名>"
+    exit 1
+fi
+
+USERNAME=$1
+
+# 检查用户是否存在
+if ! id "$USERNAME" &>/dev/null; then
+    echo "错误: 用户 $USERNAME 不存在"
+    exit 1
+fi
+
+# 检查用户是否为普通用户
+if ! groups $USERNAME | grep -q "jumpbox-user"; then
+    echo "错误: 此命令只能用于普通跳板机用户"
+    exit 1
+fi
+
+# 限制用户目录权限
+sudo chmod 700 /home/$USERNAME
+sudo chown $USERNAME:$USERNAME /home/$USERNAME
+
+# 确保 .ssh 目录安全
+sudo chmod 700 /home/$USERNAME/.ssh
+sudo chmod 600 /home/$USERNAME/.ssh/authorized_keys
+sudo chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
+
+echo "已加强用户 $USERNAME 的目录安全设置"

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# 如果用户属于 jumpbox-user 组，则限制其访问
+if groups | grep -q "jumpbox-user"; then
+    # 检查账户是否过期
+    if ! chage -l $USER | grep "Account expires" | grep -q "never"; then
+        expiry_date=$(chage -l $USER | grep "Account expires" | cut -d: -f2 | xargs)
+        expiry_epoch=$(date -d "$expiry_date" +%s 2>/dev/null)
+        current_epoch=$(date +%s)
+        
+        if [ -n "$expiry_epoch" ] && [ $current_epoch -gt $expiry_epoch ]; then
+            echo "您的账户已过期。请联系管理员。"
+            exit 1
+        fi
+    fi
+    
+    # 限制用户只能在自己的主目录中操作
+    if [[ "$PWD" != "$HOME" && "$PWD" != "$HOME"/* ]]; then
+        echo "安全限制: 您只能访问自己的主目录"
+        cd $HOME
+    fi
+fi

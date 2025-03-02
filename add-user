@@ -1,0 +1,46 @@
+#!/bin/bash
+# 用法: add-user <用户名> <过期天数> <磁盘配额(MB)> [公钥文件路径]
+
+if [ $# -lt 3 ]; then
+    echo "用法: add-user <用户名> <过期天数> <磁盘配额(MB)> [公钥文件路径]"
+    exit 1
+fi
+
+USERNAME=$1
+EXPIRE_DAYS=$2
+DISK_QUOTA_MB=$3
+PUB_KEY_FILE=$4
+
+# 创建用户
+sudo useradd -m -G jumpbox-user -s /bin/bash $USERNAME
+
+# 创建 SSH 目录
+sudo mkdir -p /home/$USERNAME/.ssh
+sudo chmod 700 /home/$USERNAME/.ssh
+sudo touch /home/$USERNAME/.ssh/authorized_keys
+sudo chmod 600 /home/$USERNAME/.ssh/authorized_keys
+
+# 如果提供了公钥文件，则添加公钥
+if [ -n "$PUB_KEY_FILE" ] && [ -f "$PUB_KEY_FILE" ]; then
+    sudo cat $PUB_KEY_FILE >> /home/$USERNAME/.ssh/authorized_keys
+    echo "已添加公钥"
+else
+    echo "未提供公钥文件，请稍后使用 add-pubkey 命令添加"
+fi
+
+sudo chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
+
+# 设置过期时间
+if [ $EXPIRE_DAYS -gt 0 ]; then
+    sudo chage -E $(date -d "+$EXPIRE_DAYS days" +%Y-%m-%d) $USERNAME
+fi
+
+# 设置磁盘配额 (软限制和硬限制)
+sudo setquota -u $USERNAME $(($DISK_QUOTA_MB * 1024)) $(($DISK_QUOTA_MB * 1024 + 102400)) 0 0 /home
+
+# 限制用户只能访问自己的主目录
+sudo cat /etc/skel/.bashrc_jumpbox >> /home/$USERNAME/.bashrc
+sudo usermod -d /home/$USERNAME $USERNAME
+sudo chmod 700 /home/$USERNAME
+
+echo "普通用户 $USERNAME 已创建，过期时间为 $EXPIRE_DAYS 天后，磁盘配额为 $DISK_QUOTA_MB MB"

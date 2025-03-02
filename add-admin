@@ -1,0 +1,38 @@
+#!/bin/bash
+# 用法: add-admin <用户名> [公钥文件路径]
+
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    echo "用法: add-admin <用户名> [公钥文件路径]"
+    exit 1
+fi
+
+USERNAME=$1
+PUB_KEY_FILE=$2
+
+# 创建用户
+sudo useradd -m -G jumpbox-admin -s /bin/bash $USERNAME
+
+# 创建 SSH 目录
+sudo mkdir -p /home/$USERNAME/.ssh
+sudo chmod 700 /home/$USERNAME/.ssh
+sudo touch /home/$USERNAME/.ssh/authorized_keys
+sudo chmod 600 /home/$USERNAME/.ssh/authorized_keys
+
+# 如果提供了公钥文件，则添加公钥
+if [ -n "$PUB_KEY_FILE" ] && [ -f "$PUB_KEY_FILE" ]; then
+    sudo cat $PUB_KEY_FILE >> /home/$USERNAME/.ssh/authorized_keys
+    echo "已添加公钥"
+else
+    echo "未提供公钥文件，请稍后使用 add-pubkey 命令添加"
+fi
+
+sudo chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
+
+# 设置永不过期
+sudo chage -E -1 $USERNAME
+
+# 将用户添加到 sudoers
+echo "$USERNAME ALL=(ALL) ALL" | sudo tee /etc/sudoers.d/$USERNAME > /dev/null
+sudo chmod 440 /etc/sudoers.d/$USERNAME
+
+echo "管理员用户 $USERNAME 已创建"

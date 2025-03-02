@@ -1,0 +1,14 @@
+# 跳板机安全限制
+# 禁止用户修改关键文件
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+alias chmod='echo "权限受限: 请联系管理员"'
+alias chown='echo "权限受限: 请联系管理员"'
+alias sudo='echo "权限受限: 普通用户无法使用 sudo"'
+
+# 显示配额信息
+quota -s
+
+# 显示过期时间
+echo "账户过期时间: $(chage -l $USER | grep 'Account expires' | cut -d: -f2)"

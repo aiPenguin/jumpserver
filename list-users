@@ -1,0 +1,21 @@
+#!/bin/bash
+
+echo "管理员用户:"
+echo "------------"
+for user in $(grep -Po '^[^:]+' /etc/passwd); do
+    if groups $user 2>/dev/null | grep -q "jumpbox-admin"; then
+        expiry=$(sudo chage -l $user | grep "Account expires" | cut -d: -f2)
+        echo "$user (过期时间: $expiry)"
+    fi
+done
+
+echo -e "\n普通用户:"
+echo "------------"
+for user in $(grep -Po '^[^:]+' /etc/passwd); do
+    if groups $user 2>/dev/null | grep -q "jumpbox-user"; then
+        expiry=$(sudo chage -l $user | grep "Account expires" | cut -d: -f2)
+        quota=$(sudo quota -u $user | tail -n 1)
+        echo "$user (过期时间: $expiry)"
+        echo "配额: $quota"
+    fi
+done

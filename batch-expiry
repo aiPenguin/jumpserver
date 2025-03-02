@@ -1,0 +1,29 @@
+#!/bin/bash
+# 用法: batch-expiry <天数> [用户名1] [用户名2] ...
+
+if [ $# -lt 2 ]; then
+    echo "用法: batch-expiry <天数> [用户名1] [用户名2] ..."
+    echo "      批量设置多个用户的过期时间"
+    exit 1
+fi
+
+DAYS=$1
+shift
+
+for USERNAME in "$@"; do
+    # 检查用户是否存在
+    if ! id "$USERNAME" &>/dev/null; then
+        echo "跳过: 用户 $USERNAME 不存在"
+        continue
+    fi
+    
+    # 设置过期时间
+    if [ "$DAYS" -eq -1 ]; then
+        sudo chage -E -1 $USERNAME
+        echo "用户 $USERNAME 已设置为永不过期"
+    else
+        EXPIRE_DATE=$(date -d "+$DAYS days" +%Y-%m-%d)
+        sudo chage -E $EXPIRE_DATE $USERNAME
+        echo "用户 $USERNAME 的账户将于 $EXPIRE_DATE 过期"
+    fi
+done

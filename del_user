@@ -1,25 +1,25 @@
 #!/bin/bash
-# Usage: del-user <username>
+# 用法: del-user <用户名>
 
 if [ $# -ne 1 ]; then
-    echo "Usage: del-user <username>"
+    echo "用法: del-user <用户名>"
     exit 1
 fi
 
 USERNAME=$1
 
-# Check if user exists
+# 检查用户是否存在
 if ! id "$USERNAME" &>/dev/null; then
-    echo "Error: User $USERNAME does not exist"
+    echo "错误: 用户 $USERNAME 不存在"
     exit 1
 fi
 
-# Delete user and their home directory
-userdel -r $USERNAME
+# 删除用户及其主目录
+sudo userdel -r $USERNAME
 
-# If admin user, also remove sudoers config
+# 如果是管理员用户，还需要删除 sudoers 配置
 if [ -f "/etc/sudoers.d/$USERNAME" ]; then
-    rm -f "/etc/sudoers.d/$USERNAME"
+    sudo rm -f "/etc/sudoers.d/$USERNAME"
 fi
 
-echo "User $USERNAME has been deleted"
+echo "用户 $USERNAME 已删除"
