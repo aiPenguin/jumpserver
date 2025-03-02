@@ -1,0 +1,42 @@
+#!/bin/bash
+# Usage: add-user <username> <public_key_file_path> <expiry_days> <disk_quota_MB>
+
+if [ $# -ne 4 ]; then
+    echo "Usage: add-user <username> <public_key_file_path> <expiry_days> <disk_quota_MB>"
+    exit 1
+fi
+
+USERNAME=$1
+PUB_KEY_FILE=$2
+EXPIRE_DAYS=$3
+DISK_QUOTA_MB=$4
+
+# Check if public key file exists
+if [ ! -f "$PUB_KEY_FILE" ]; then
+    echo "Error: Public key file $PUB_KEY_FILE does not exist"
+    exit 1
+fi
+
+# Create user
+useradd -m -G jumpbox-user -s /bin/bash $USERNAME
+
+# Create SSH directory
+mkdir -p /home/$USERNAME/.ssh
+chmod 700 /home/$USERNAME/.ssh
+
+# Add public key
+cat $PUB_KEY_FILE > /home/$USERNAME/.ssh/authorized_keys
+chmod 600 /home/$USERNAME/.ssh/authorized_keys
+chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
+
+# Set expiration time
+if [ $EXPIRE_DAYS -gt 0 ]; then
+    chage -E $(date -d "+$EXPIRE_DAYS days" +%Y-%m-%d) $USERNAME
+fi
+
+# Set disk quota (soft and hard limits)
+# Using setquota command to set user quota
+# Parameters: username soft_block_limit hard_block_limit soft_inode_limit hard_inode_limit filesystem
+setquota -u $USERNAME $(($DISK_QUOTA_MB * 1024)) $(($DISK_QUOTA_MB * 1024 + 102400)) 0 0 /home
+
+echo "Regular user $USERNAME has been created, expiry time set to $EXPIRE_DAYS days, disk quota set to $DISK_QUOTA_MB MB"

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+echo "Administrator Users:"
+echo "------------"
+for user in $(grep -Po '^[^:]+' /etc/passwd); do
+    if groups $user 2>/dev/null | grep -q "jumpbox-admin"; then
+        expiry=$(chage -l $user | grep "Account expires" | cut -d: -f2)
+        echo "$user (Expiry: $expiry)"
+    fi
+done
+
+echo -e "\nRegular Users:"
+echo "------------"
+for user in $(grep -Po '^[^:]+' /etc/passwd); do
+    if groups $user 2>/dev/null | grep -q "jumpbox-user"; then
+        expiry=$(chage -l $user | grep "Account expires" | cut -d: -f2)
+        quota=$(quota -u $user | tail -n 1)
+        echo "$user (Expiry: $expiry)"
+        echo "Quota: $quota"
+    fi
+done

@@ -1,0 +1,25 @@
+#!/bin/bash
+# Usage: del-user <username>
+
+if [ $# -ne 1 ]; then
+    echo "Usage: del-user <username>"
+    exit 1
+fi
+
+USERNAME=$1
+
+# Check if user exists
+if ! id "$USERNAME" &>/dev/null; then
+    echo "Error: User $USERNAME does not exist"
+    exit 1
+fi
+
+# Delete user and their home directory
+userdel -r $USERNAME
+
+# If admin user, also remove sudoers config
+if [ -f "/etc/sudoers.d/$USERNAME" ]; then
+    rm -f "/etc/sudoers.d/$USERNAME"
+fi
+
+echo "User $USERNAME has been deleted"
